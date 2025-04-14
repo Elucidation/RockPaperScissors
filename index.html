@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Paper Scissors - Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Apply the game font */
+        body {
+            font-family: 'Press Start 2P', cursive;
+            /* Light blue background for the whole page, similar to Pygame menu */
+            background-color: #ADD8E6; /* lightblue */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333; /* Darker text for readability */
+        }
+        /* Main game container styling */
+        .game-container {
+            background-color: #FFFFFF; /* White container background */
+            padding: 2rem;
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); /* Shadow for depth */
+            text-align: center;
+            width: 90%;
+            max-width: 500px; /* Max width for larger screens */
+            border: 4px solid #000; /* Black border */
+        }
+        /* Button styling */
+        .game-button {
+            font-family: 'Press Start 2P', cursive; /* Ensure font */
+            padding: 0.8rem 1.5rem;
+            margin: 0.5rem;
+            border-radius: 0.5rem; /* Rounded corners */
+            border: 2px solid #000; /* Black border */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1rem; /* Slightly larger font */
+            text-transform: uppercase; /* Uppercase text */
+            box-shadow: 3px 3px 0px #000; /* Pixelated shadow */
+        }
+        /* Specific button colors */
+        .btn-start { background-color: #90EE90; color: #000; } /* Light Green */
+        .btn-quit { background-color: #F08080; color: #000; } /* Light Coral */
+        .btn-choice { background-color: #D3D3D3; color: #000; } /* Light Gray */
+        .btn-end { background-color: #FFA07A; color: #000; } /* Light Salmon */
+
+        /* Button hover effects */
+        .game-button:hover {
+            transform: translateY(-2px); /* Slight lift */
+            box-shadow: 5px 5px 0px #000;
+        }
+        .game-button:active {
+            transform: translateY(1px); /* Press down effect */
+            box-shadow: 1px 1px 0px #000;
+        }
+        /* Hide elements using 'hidden' class */
+        .hidden {
+            display: none;
+        }
+        /* Style for the results area */
+        #result-display {
+            margin-top: 1.5rem;
+            font-size: 1.2rem;
+            min-height: 5rem; /* Ensure space */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Style for score */
+        #score {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        /* Style for visual choices */
+        #choices-visual {
+            font-size: 3rem; /* Large emojis */
+            margin: 1rem 0;
+        }
+         /* Style for the round counter */
+        #round-counter {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        /* Style for the final message */
+        #message {
+             margin-bottom: 1rem;
+             font-size: 1rem;
+             min-height: 2em; /* Reserve space */
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="text-2xl font-bold mb-4">Rock Paper Scissors</h1>
+
+        <div id="main-menu">
+            <div id="last-session-score" class="mb-4 text-sm">Last Session: W:0 L:0 D:0</div>
+            <button id="start-button" class="game-button btn-start">Start Game</button>
+            </div>
+
+        <div id="game-round" class="hidden">
+            <div id="round-counter" class="text-lg font-semibold">Round: 1</div>
+            <div id="score" class="text-base mb-2">W:0 | L:0 | D:0 | Diff: 0</div>
+            <div id="message" class="text-lg font-semibold mb-3">Choose your weapon!</div>
+
+            <div id="choices-visual" class="my-4 text-4xl">
+                <span id="player-choice-visual">❓</span>
+                vs
+                <span id="ai-choice-visual">❓</span>
+            </div>
+
+            <div id="result-display" class="text-xl font-bold my-3 min-h-[3em]"></div>
+
+            <div id="choice-buttons" class="my-4">
+                <button data-choice="Rock" class="game-button btn-choice">✊ Rock</button>
+                <button data-choice="Paper" class="game-button btn-choice">✋ Paper</button>
+                <button data-choice="Scissors" class="game-button btn-choice">✌️ Scissors</button>
+            </div>
+
+            <button id="end-game-button" class="game-button btn-end">End Game</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Constants ---
+        const ROCK = "Rock";
+        const PAPER = "Paper";
+        const SCISSORS = "Scissors";
+        const CHOICES = [ROCK, PAPER, SCISSORS];
+        const EMOJIS = { // Map choices to emojis
+            [ROCK]: "✊",
+            [PAPER]: "✋",
+            [SCISSORS]: "✌️",
+            'default': '❓'
+        };
+
+        // --- Game State Variables ---
+        let wins = 0;
+        let losses = 0;
+        let draws = 0;
+        let currentRound = 0;
+        let lastPlayerChoice = null;
+        let lastAiChoice = null;
+        let lastResult = null; // 'win', 'loss', 'draw'
+
+        // --- DOM Elements ---
+        const mainMenu = document.getElementById('main-menu');
+        const gameRound = document.getElementById('game-round');
+        const startButton = document.getElementById('start-button');
+        const endGameButton = document.getElementById('end-game-button');
+        const choiceButtons = document.querySelectorAll('#choice-buttons .game-button');
+        const scoreDisplay = document.getElementById('score');
+        const lastSessionScoreDisplay = document.getElementById('last-session-score');
+        const resultDisplay = document.getElementById('result-display');
+        const messageDisplay = document.getElementById('message');
+        const roundCounterDisplay = document.getElementById('round-counter');
+        const playerChoiceVisual = document.getElementById('player-choice-visual');
+        const aiChoiceVisual = document.getElementById('ai-choice-visual');
+
+
+        // --- Helper Functions ---
+
+        /**
+         * Determines the winner based on Rock Paper Scissors rules.
+         * @param {string} player - Player's choice (ROCK, PAPER, or SCISSORS).
+         * @param {string} ai - AI's choice (ROCK, PAPER, or SCISSORS).
+         * @returns {string} 'win', 'loss', or 'draw'.
+         */
+        function determineWinner(player, ai) {
+            if (player === ai) return "draw";
+            if (
+                (player === ROCK && ai === SCISSORS) ||
+                (player === SCISSORS && ai === PAPER) ||
+                (player === PAPER && ai === ROCK)
+            ) {
+                return "win";
+            }
+            return "loss";
+        }
+
+        /**
+         * Updates the score display and other UI elements.
+         */
+        function updateUI() {
+            // Update score display during the game
+            const diff = wins - losses;
+            const diffSign = diff > 0 ? "+" : "";
+            scoreDisplay.textContent = `W:${wins} | L:${losses} | D:${draws} | Diff: ${diffSign}${diff}`;
+
+            // Update round counter
+            roundCounterDisplay.textContent = `Round: ${currentRound}`;
+
+            // Update visual choices
+            playerChoiceVisual.textContent = EMOJIS[lastPlayerChoice] || EMOJIS['default'];
+            aiChoiceVisual.textContent = EMOJIS[lastAiChoice] || EMOJIS['default'];
+
+            // Update result message
+            if (lastResult) {
+                 resultDisplay.textContent = `You ${lastResult.toUpperCase()}! (${lastPlayerChoice} vs ${lastAiChoice})`;
+                 // Change background color based on result (like Pygame)
+                 if(lastResult === 'win') gameRound.style.backgroundColor = '#E0FFE0'; // Light green
+                 else if(lastResult === 'loss') gameRound.style.backgroundColor = '#FFE0E0'; // Light red
+                 else gameRound.style.backgroundColor = '#F0F0F0'; // Light gray
+            } else if (currentRound > 0) {
+                 resultDisplay.textContent = ""; // Clear if no result yet (start of game)
+                 gameRound.style.backgroundColor = '#E0FFE0'; // Default game green
+            } else {
+                 resultDisplay.textContent = ""; // Clear for first round start
+                 gameRound.style.backgroundColor = '#E0FFE0'; // Default game green
+            }
+
+            // Update main message
+            if (currentRound > 0) {
+                messageDisplay.textContent = "Choose your weapon!";
+            }
+
+            // Update last session score on main menu (when game ends)
+            lastSessionScoreDisplay.textContent = `Last Session: W:${wins} L:${losses} D:${draws}`;
+        }
+
+        /**
+         * Resets the game state for a new session.
+         */
+        function resetGame() {
+            wins = 0;
+            losses = 0;
+            draws = 0;
+            currentRound = 1; // Start at round 1
+            lastPlayerChoice = null;
+            lastAiChoice = null;
+            lastResult = null;
+            updateUI(); // Update UI to reflect reset state
+            messageDisplay.textContent = "Choose your weapon!"; // Initial prompt
+            gameRound.style.backgroundColor = '#E0FFE0'; // Reset background
+        }
+
+        /**
+         * Switches the view between the main menu and the game round.
+         * @param {string} view - 'menu' or 'game'.
+         */
+        function switchView(view) {
+            if (view === 'game') {
+                mainMenu.classList.add('hidden');
+                gameRound.classList.remove('hidden');
+                document.body.style.backgroundColor = '#90EE90'; // Light green background for game
+            } else { // 'menu'
+                mainMenu.classList.remove('hidden');
+                gameRound.classList.add('hidden');
+                document.body.style.backgroundColor = '#ADD8E6'; // Light blue background for menu
+            }
+        }
+
+        // --- Event Listeners ---
+
+        /**
+         * Handles the click event for the Start Game button.
+         */
+        startButton.addEventListener('click', () => {
+            console.log("Starting game...");
+            resetGame();
+            switchView('game');
+        });
+
+        /**
+         * Handles the click event for the End Game button.
+         */
+        endGameButton.addEventListener('click', () => {
+            console.log("Ending game, returning to main menu.");
+            // Score is preserved in the 'last session' display
+            updateUI(); // Ensure last session score is updated before switching
+            switchView('menu');
+        });
+
+        /**
+         * Handles click events for the choice buttons (Rock, Paper, Scissors).
+         */
+        choiceButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const playerChoice = button.getAttribute('data-choice');
+                const aiChoice = CHOICES[Math.floor(Math.random() * CHOICES.length)];
+                const result = determineWinner(playerChoice, aiChoice);
+
+                console.log(`Round ${currentRound}: Player:${playerChoice} AI:${aiChoice} Result:${result}`);
+
+                // Update state
+                lastPlayerChoice = playerChoice;
+                lastAiChoice = aiChoice;
+                lastResult = result;
+
+                if (result === 'win') wins++;
+                else if (result === 'loss') losses++;
+                else draws++;
+
+                currentRound++; // Increment round number
+
+                // Update the UI
+                updateUI();
+            });
+        });
+
+        // --- Initial Setup ---
+        updateUI(); // Initialize UI elements on load (shows 0s for last session)
+        switchView('menu'); // Start at the main menu
+
+    </script>
+</body>
+</html>
