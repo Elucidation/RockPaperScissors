@@ -146,7 +146,7 @@
         let currentRound = 0;
         let lastPlayerChoice = null;
         let lastAiChoice = null;
-        let lastResult = null; // 'win', 'loss', 'draw'
+        let lastResult = null; // 'win', 'lose', 'draw'
 
         // --- DOM Elements ---
         const mainMenu = document.getElementById('main-menu');
@@ -169,7 +169,7 @@
          * Determines the winner based on Rock Paper Scissors rules.
          * @param {string} player - Player's choice (ROCK, PAPER, or SCISSORS).
          * @param {string} ai - AI's choice (ROCK, PAPER, or SCISSORS).
-         * @returns {string} 'win', 'loss', or 'draw'.
+         * @returns {string} 'win', 'lose', or 'draw'.
          */
         function determineWinner(player, ai) {
             if (player === ai) return "draw";
@@ -180,7 +180,7 @@
             ) {
                 return "win";
             }
-            return "loss";
+            return "lose";
         }
 
         /**
@@ -204,7 +204,7 @@
                  resultDisplay.textContent = `You ${lastResult.toUpperCase()}! (${lastPlayerChoice} vs ${lastAiChoice})`;
                  // Change background color based on result (like Pygame)
                  if(lastResult === 'win') gameRound.style.backgroundColor = '#E0FFE0'; // Light green
-                 else if(lastResult === 'loss') gameRound.style.backgroundColor = '#FFE0E0'; // Light red
+                 else if(lastResult === 'lose') gameRound.style.backgroundColor = '#FFE0E0'; // Light red
                  else gameRound.style.backgroundColor = '#F0F0F0'; // Light gray
             } else if (currentRound > 0) {
                  resultDisplay.textContent = ""; // Clear if no result yet (start of game)
@@ -293,7 +293,7 @@
                 lastResult = result;
 
                 if (result === 'win') wins++;
-                else if (result === 'loss') losses++;
+                else if (result === 'lose') losses++;
                 else draws++;
 
                 currentRound++; // Increment round number
